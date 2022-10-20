@@ -14,9 +14,7 @@ class ShowProductService {
 
         const product = await productsRepository.findOne(id);
 
-        const redisCache = new RedisCache();
-
-        await redisCache.invalidate('api-vendas-PRODUCT_LIST');
+        await RedisCache.invalidate('api-vendas-PRODUCT_LIST');
 
         if (!product) {
             throw new AppError('Product not found.');
