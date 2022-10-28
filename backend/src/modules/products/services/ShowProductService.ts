@@ -1,18 +1,18 @@
 import RedisCache from '@shared/cache/RedisCache';
 import AppError from '@shared/errors/AppError';
-import { getCustomRepository } from 'typeorm';
-import Product from '../infra/typeorm/entities/Product';
-import { ProductRepository } from '../infra/typeorm/repositories/ProductRepository';
+import { IProductsRepository } from '../domain/repositories/IProductsRepository';
+import { IShowProduct } from '../domain/models/IShowProduct';
+import { IProduct } from '../domain/models/IProduct';
+import { inject, injectable } from 'tsyringe';
 
-interface IRequest {
-    id: string;
-}
-
+@injectable()
 class ShowProductService {
-    public async execute({ id }: IRequest): Promise<Product> {
-        const productsRepository = getCustomRepository(ProductRepository);
-
-        const product = await productsRepository.findOne(id);
+    constructor(
+        @inject('ProductsRepository')
+        private productsRepository: IProductsRepository,
+    ) {}
+    public async execute({ id }: IShowProduct): Promise<IProduct> {
+        const product = await this.productsRepository.findById(id);
 
         await RedisCache.invalidate('api-vendas-PRODUCT_LIST');
 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import SendForgotEmailService from '../../../services/SendForgotPasswordEmailService.ts';
+import { container } from 'tsyringe';
+import SendForgotPasswordEmailService from '@modules/users/services/SendForgotPasswordEmailService';
 
 export default class ForgotPasswordController {
     public async create(
@@ -7,8 +8,9 @@ export default class ForgotPasswordController {
         response: Response,
     ): Promise<Response> {
         const { email } = request.body;
-
-        const sendForgotPasswordEmail = new SendForgotEmailService();
+        const sendForgotPasswordEmail = container.resolve(
+            SendForgotPasswordEmailService,
+        );
 
         await sendForgotPasswordEmail.execute({ email });
 

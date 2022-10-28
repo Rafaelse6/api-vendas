@@ -1,30 +1,32 @@
 import AppError from '@shared/errors/AppError';
-import { getCustomRepository } from 'typeorm';
 import { hash } from 'bcryptjs';
 import { isAfter, addHours } from 'date-fns';
-import UsersRepository from '../infra/typeorm/repositories/UsersRepository';
-import UserTokensRepository from '../infra/typeorm/repositories/UserTokensRepository';
-
-interface IRequest {
-    token: string;
-    password: string;
-}
+import { IResetPassword } from '../domain/models/IResetPassword';
+import { IUsersRepository } from '../domain/repositories/IUsersRepository';
+import { IUserTokensRepository } from '../domain/repositories/IUserTokensRepository';
+import { inject } from 'tsyringe';
 
 class ResetPasswordService {
-    public async execute({ token, password }: IRequest): Promise<void> {
-        const usersRepository = getCustomRepository(UsersRepository);
-        const userTokensRepository = getCustomRepository(UserTokensRepository);
+    constructor(
+        @inject('UsersRepository')
+        private usersRepository: IUsersRepository,
 
-        const userToken = await userTokensRepository.findByToken(token);
+        @inject('UserTokensRepository')
+        private userTokensRepository: IUserTokensRepository,
+    ) {}
+    public async execute({ token, password }: IResetPassword): Promise<void> {
+        const userToken = await this.userTokensRepository.findByToken(token);
 
         if (!userToken) {
             throw new AppError('User Token does not exist.');
         }
-        const user = await usersRepository.findById(userToken.user_id);
+        const user = await this.usersRepository.findById(userToken.user_id);
 
         if (!user) {
             throw new AppError('User does not exist.');
         }
+
+        user.password = await hash(password, 8);
 
         const tokenCreatedAt = userToken.created_at;
         const compareDate = addHours(tokenCreatedAt, 2);
@@ -33,9 +35,7 @@ class ResetPasswordService {
             throw new AppError('Token expired.');
         }
 
-        user.password = await hash(password, 8);
-
-        await usersRepository.save(user);
+        await this.usersRepository.save(user);
     }
 }
 
