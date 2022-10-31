@@ -12,3 +12,5 @@ class BcryptHashProvider implements IHashProvider {
         return compare(payload, hashed);
     }
 }
+
+export default BcryptHashProvider;
